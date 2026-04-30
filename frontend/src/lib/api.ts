@@ -1,6 +1,6 @@
 const BASE_URL = "http://localhost:8080/api";
 
-export interface Waitlist {
+export interface RegisteredUser {
   id: number;
   name: string;
   email: string;
@@ -8,12 +8,12 @@ export interface Waitlist {
   updated_at: string;
 }
 
-export interface WaitlistResponse {
-  data: Waitlist[];
+export interface RegisteredUserResponse {
+  data: RegisteredUser[];
   total: number;
 }
 
-export interface WaitlistFormData {
+export interface UserFormData {
   name: string;
   email: string;
 }
@@ -32,20 +32,20 @@ async function request<T>(
 }
 
 export const api = {
-  getWaitlists: () => request<WaitlistResponse>("/waitlist"),
+  getUsers: () => request<RegisteredUserResponse>("/users"),
 
-  createWaitlist: (data: WaitlistFormData) =>
-    request<{ message: string; data: Waitlist }>("/waitlist", {
+  createUser: (data: UserFormData) =>
+    request<{ message: string; data: RegisteredUser }>("/users", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  updateWaitlist: (id: number, data: WaitlistFormData) =>
-    request<{ message: string; data: Waitlist }>(`/waitlist/${id}`, {
+  updateUser: (id: number, data: UserFormData) =>
+    request<{ message: string; data: RegisteredUser }>(`/users/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  deleteWaitlist: (id: number) =>
-    request<{ message: string }>(`/waitlist/${id}`, { method: "DELETE" }),
+  deleteUser: (id: number) =>
+    request<{ message: string }>(`/users/${id}`, { method: "DELETE" }),
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { api, type Waitlist, type WaitlistFormData } from "@/lib/api";
+import { api, type RegisteredUser, type UserFormData } from "@/lib/api";
 import {
   Users,
   UserPlus,
@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ChevronRight,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 
 // ─── Stat Card ──────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ function StatCard({
 }
 
 // ─── Modal Form ──────────────────────────────────────────────────────────────
-function WaitlistModal({
+function UserModal({
   open,
   onClose,
   onSubmit,
@@ -51,11 +52,11 @@ function WaitlistModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: WaitlistFormData) => void;
-  initial?: Waitlist | null;
+  onSubmit: (data: UserFormData) => void;
+  initial?: RegisteredUser | null;
   loading: boolean;
 }) {
-  const [form, setForm] = useState<WaitlistFormData>({ name: "", email: "" });
+  const [form, setForm] = useState<UserFormData>({ name: "", email: "" });
 
   useEffect(() => {
     setForm(initial ? { name: initial.name, email: initial.email } : { name: "", email: "" });
@@ -74,12 +75,19 @@ function WaitlistModal({
           <X size={18} />
         </button>
 
-        <h2 className="text-xl font-bold text-slate-800 mb-1">
-          {initial ? "Edit Pendaftar" : "Tambah Pendaftar Baru"}
-        </h2>
-        <p className="text-sm text-slate-400 mb-6">
-          {initial ? "Perbarui informasi pendaftar" : "Tambahkan email baru ke waitlist"}
-        </p>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+            {initial ? <Pencil size={18} className="text-emerald-600" /> : <UserPlus size={18} className="text-emerald-600" />}
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">
+              {initial ? "Edit Data User" : "Tambah User Baru"}
+            </h2>
+            <p className="text-xs text-slate-400">
+              {initial ? "Perbarui informasi user terdaftar" : "Daftarkan user baru ke sistem"}
+            </p>
+          </div>
+        </div>
 
         <form
           onSubmit={(e) => {
@@ -156,7 +164,7 @@ function DeleteDialog({
         </div>
         <h2 className="text-lg font-bold text-slate-800 text-center mb-2">Konfirmasi Hapus</h2>
         <p className="text-sm text-slate-500 text-center mb-6">
-          Yakin ingin menghapus <span className="font-semibold text-slate-700">{name}</span>? Tindakan ini tidak dapat dibatalkan.
+          Yakin ingin menghapus user <span className="font-semibold text-slate-700">{name}</span>? Tindakan ini tidak dapat dibatalkan.
         </p>
         <div className="flex gap-3">
           <button
@@ -178,25 +186,44 @@ function DeleteDialog({
   );
 }
 
+// ─── Avatar ──────────────────────────────────────────────────────────────────
+function UserAvatar({ name }: { name: string }) {
+  const colors = [
+    "from-emerald-400 to-teal-500",
+    "from-blue-400 to-indigo-500",
+    "from-violet-400 to-purple-500",
+    "from-rose-400 to-pink-500",
+    "from-amber-400 to-orange-500",
+  ];
+  const colorIndex = name.charCodeAt(0) % colors.length;
+  return (
+    <div
+      className={`w-9 h-9 rounded-full bg-gradient-to-br ${colors[colorIndex]} flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm`}
+    >
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 // ─── Main Dashboard Page ─────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  const [waitlists, setWaitlists] = useState<Waitlist[]>([]);
+  const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [search, setSearch] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Waitlist | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Waitlist | null>(null);
+  const [editTarget, setEditTarget] = useState<RegisteredUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RegisteredUser | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.getWaitlists();
-      setWaitlists(res.data);
+      const res = await api.getUsers();
+      setUsers(res.data);
     } catch {
       toast({ variant: "destructive", title: "Gagal", description: "Tidak dapat memuat data dari server." });
     } finally {
@@ -206,11 +233,11 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleCreate = async (data: WaitlistFormData) => {
+  const handleCreate = async (data: UserFormData) => {
     setActionLoading(true);
     try {
-      await api.createWaitlist(data);
-      toast({ title: "Berhasil!", description: "Pendaftar baru berhasil ditambahkan." });
+      await api.createUser(data);
+      toast({ title: "Berhasil!", description: "User baru berhasil ditambahkan." });
       setModalOpen(false);
       fetchData();
     } catch (e: unknown) {
@@ -220,12 +247,12 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdate = async (data: WaitlistFormData) => {
+  const handleUpdate = async (data: UserFormData) => {
     if (!editTarget) return;
     setActionLoading(true);
     try {
-      await api.updateWaitlist(editTarget.id, data);
-      toast({ title: "Berhasil!", description: "Data berhasil diperbarui." });
+      await api.updateUser(editTarget.id, data);
+      toast({ title: "Berhasil!", description: "Data user berhasil diperbarui." });
       setEditTarget(null);
       fetchData();
     } catch (e: unknown) {
@@ -239,8 +266,8 @@ export default function DashboardPage() {
     if (!deleteTarget) return;
     setActionLoading(true);
     try {
-      await api.deleteWaitlist(deleteTarget.id);
-      toast({ title: "Berhasil!", description: "Data berhasil dihapus." });
+      await api.deleteUser(deleteTarget.id);
+      toast({ title: "Berhasil!", description: "User berhasil dihapus." });
       setDeleteTarget(null);
       fetchData();
     } catch (e: unknown) {
@@ -250,14 +277,14 @@ export default function DashboardPage() {
     }
   };
 
-  const filtered = waitlists.filter(
-    (w) =>
-      w.name.toLowerCase().includes(search.toLowerCase()) ||
-      w.email.toLowerCase().includes(search.toLowerCase())
+  const filtered = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const todayCount = waitlists.filter(
-    (w) => new Date(w.created_at).toDateString() === new Date().toDateString()
+  const todayCount = users.filter(
+    (u) => new Date(u.created_at).toDateString() === new Date().toDateString()
   ).length;
 
   return (
@@ -286,13 +313,18 @@ export default function DashboardPage() {
           </a>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <LayoutDashboard size={18} />
-            Dashboard
+            Manajemen User
             <ChevronRight size={14} className="ml-auto" />
           </div>
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        {/* Sidebar Footer */}
+        <div className="px-4 py-4 border-t border-slate-800 space-y-2">
+          {/* Stats mini */}
+          <div className="bg-slate-800 rounded-xl px-4 py-3">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total User</p>
+            <p className="text-2xl font-bold text-white">{users.length}</p>
+          </div>
           <button
             onClick={() => navigate("/")}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
@@ -308,8 +340,8 @@ export default function DashboardPage() {
         {/* Header */}
         <header className="bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h1 className="text-xl font-bold text-slate-800">Manajemen Waitlist</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Kelola semua data pendaftar</p>
+            <h1 className="text-xl font-bold text-slate-800">Manajemen User</h1>
+            <p className="text-xs text-slate-400 mt-0.5">Kelola semua data user yang terdaftar</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -324,7 +356,7 @@ export default function DashboardPage() {
               className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-emerald-200"
             >
               <UserPlus size={16} />
-              Tambah Pendaftar
+              Tambah User
             </button>
           </div>
         </header>
@@ -332,17 +364,17 @@ export default function DashboardPage() {
         {/* Content */}
         <main className="flex-1 overflow-auto px-8 py-6">
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <StatCard title="Total Pendaftar" value={waitlists.length} icon={Users} color="bg-emerald-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <StatCard title="Total User Terdaftar" value={users.length} icon={Users} color="bg-emerald-500" />
             <StatCard title="Daftar Hari Ini" value={todayCount} icon={UserPlus} color="bg-blue-500" />
-            <StatCard title="Tampil di Tabel" value={filtered.length} icon={LayoutDashboard} color="bg-violet-500" />
+            <StatCard title="Hasil Pencarian" value={filtered.length} icon={ShieldCheck} color="bg-violet-500" />
           </div>
 
           {/* Table Card */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             {/* Table Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="font-semibold text-slate-700">Daftar Pendaftar</h2>
+              <h2 className="font-semibold text-slate-700">Daftar User Terdaftar</h2>
               <div className="relative">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -361,7 +393,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">ID</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Nama</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">User</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tanggal Daftar</th>
                     <th className="text-right px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Aksi</th>
@@ -386,40 +418,46 @@ export default function DashboardPage() {
                             <Users size={24} className="text-slate-300" />
                           </div>
                           <p className="text-slate-400 text-sm font-medium">
-                            {search ? "Tidak ada hasil yang cocok" : "Belum ada data pendaftar"}
+                            {search ? "Tidak ada hasil yang cocok" : "Belum ada user terdaftar"}
                           </p>
+                          {!search && (
+                            <button
+                              onClick={() => { setEditTarget(null); setModalOpen(true); }}
+                              className="text-xs text-emerald-600 font-semibold hover:underline"
+                            >
+                              + Tambah user pertama
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((w) => (
-                      <tr key={w.id} className="hover:bg-slate-50/70 transition-colors group">
-                        <td className="px-6 py-4 text-slate-400 font-mono text-xs">#{w.id}</td>
+                    filtered.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-50/70 transition-colors group">
+                        <td className="px-6 py-4 text-slate-400 font-mono text-xs">#{u.id}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                              {w.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="font-semibold text-slate-700">{w.name}</span>
+                            <UserAvatar name={u.name} />
+                            <span className="font-semibold text-slate-700">{u.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500">{w.email}</td>
+                        <td className="px-6 py-4 text-slate-500">{u.email}</td>
                         <td className="px-6 py-4 text-slate-400 text-xs">
-                          {new Date(w.created_at).toLocaleDateString("id-ID", {
+                          {new Date(u.created_at).toLocaleDateString("id-ID", {
                             day: "numeric", month: "long", year: "numeric",
                           })}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                              onClick={() => { setEditTarget(w); setModalOpen(true); }}
+                              onClick={() => { setEditTarget(u); setModalOpen(true); }}
                               className="p-2 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
                               title="Edit"
                             >
                               <Pencil size={14} />
                             </button>
                             <button
-                              onClick={() => setDeleteTarget(w)}
+                              onClick={() => setDeleteTarget(u)}
                               className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                               title="Hapus"
                             >
@@ -436,8 +474,12 @@ export default function DashboardPage() {
 
             {/* Footer */}
             {!loading && filtered.length > 0 && (
-              <div className="px-6 py-3 border-t border-slate-100 text-xs text-slate-400">
-                Menampilkan {filtered.length} dari {waitlists.length} total pendaftar
+              <div className="px-6 py-3 border-t border-slate-100 text-xs text-slate-400 flex items-center justify-between">
+                <span>Menampilkan {filtered.length} dari {users.length} total user</span>
+                <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                  <ShieldCheck size={12} />
+                  Data tersimpan aman
+                </span>
               </div>
             )}
           </div>
@@ -445,7 +487,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Modals ── */}
-      <WaitlistModal
+      <UserModal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditTarget(null); }}
         onSubmit={editTarget ? handleUpdate : handleCreate}

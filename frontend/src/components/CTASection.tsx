@@ -16,7 +16,7 @@ export function CTASection() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/waitlist", {
+      const response = await fetch("http://localhost:8080/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),
@@ -108,8 +108,8 @@ export function CTASection() {
                 className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 text-center"
               >
                 <CheckCircle2 className="mx-auto h-12 w-12 text-white mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Terima kasih!</h3>
-                <p className="text-white/90">Email Anda telah masuk ke dalam daftar tunggu prioritas kami.</p>
+                <h3 className="text-2xl font-bold mb-2">Pendaftaran Berhasil!</h3>
+                <p className="text-white/90">Anda telah terdaftar sebagai pengguna prioritas NutriGrowth.</p>
               </motion.div>
             )}
           </div>
