@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+vendor/
+.venv/
+__pycache__/
+*.pyc
+
+# Build output
+build/
+dist/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Database / vector store
+chroma_db/
+*.sqlite
+*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# iOS / Android build
+ios/Pods/
+android/.gradle/
+android/app/build/
